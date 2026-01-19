@@ -1,0 +1,9 @@
+<project>
+  <builders>
+    <javaposse.jobdsl.plugin.ExecuteDslScripts plugin="job-dsl">
+      <targets>pipeline_job.groovy</targets>
+      <usingScriptText>false</usingScriptText>
+      <sandbox>true</sandbox>
+    </javaposse.jobdsl.plugin.ExecuteDslScripts>
+  </builders>
+</project>

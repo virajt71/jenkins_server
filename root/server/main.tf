@@ -1,6 +1,6 @@
 # Resource Group
 module "resource_group" {
-  source = "../../../modules/resource-group"
+  source = "../../modules/resource-group"
 
   name     = "${local.name_prefix}-rg"
   location = local.location
@@ -9,7 +9,7 @@ module "resource_group" {
 
 # Network
 module "network" {
-  source = "../../../modules/network"
+  source = "../../modules/network"
 
   name                = "${local.name_prefix}-vnet"
   location            = local.location
@@ -79,7 +79,7 @@ module "network" {
 
 # Compute
 module "compute" {
-  source = "../../../modules/compute"
+  source = "../../modules/compute"
 
   name                  = "${local.name_prefix}-vm"
   location              = local.location
@@ -127,7 +127,7 @@ resource "time_sleep" "wait_30_seconds" {
 
 # install terraform with ansible
 module "terraform" {
-  source = "../../../modules/ansible"
+  source = "../../modules/ansible"
 
   playbook_filename = local.terraform
   host_public_ip    = module.network.public_ip_addresses.web
@@ -155,7 +155,7 @@ module "terraform" {
 
 # install docker with ansible
 module "docker" {
-  source = "../../../modules/ansible"
+  source = "../../modules/ansible"
 
   playbook_filename = local.docker
   host_public_ip    = module.network.public_ip_addresses.web
@@ -183,7 +183,7 @@ module "docker" {
 
 # install jenkins with ansible
 module "install_jenkins" {
-  source = "../../../modules/ansible"
+  source = "../../modules/ansible"
 
   playbook_filename = local.install_jenkins
   host_public_ip    = module.network.public_ip_addresses.web
@@ -208,7 +208,7 @@ module "install_jenkins" {
 
 # configure jenkins variable via ansible
 module "jenkins_variables" {
-  source = "../../../modules/ansible"
+  source = "../../modules/ansible"
 
   playbook_filename = local.jenkins_variables
   host_public_ip    = module.network.public_ip_addresses.web
@@ -234,36 +234,36 @@ module "jenkins_variables" {
   ]
 }
 
+# # configure pipeline in jenkins via ansible
+# module "jenkins_pipeline" {
+#   source = "../../modules/ansible"
+
+#   playbook_filename = local.jenkins_pipeline
+#   host_public_ip    = module.network.public_ip_addresses.web
+
+#   extra = {
+#     default = {
+#       name               = local.admin_username
+#       password           = module.compute.generated_passwords.web
+#       python_interpreter = "/usr/bin/python3"
+#       connection         = "ssh"
+#       become_password    = module.compute.generated_passwords.web
+#       ssh_common_args    = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no"
+#       become_password    = module.compute.generated_passwords.web
+#     }
+#   }
+
+#   depends_on = [
+#     time_sleep.wait_30_seconds,
+#     module.jenkins_variables
+#   ]
+# }
+
 # configure pipeline in jenkins via ansible
-module "jenkins_pipeline" {
-  source = "../../../modules/ansible"
+module "jenkins_pipeline2" {
+  source = "../../modules/ansible"
 
-  playbook_filename = local.jenkins_pipeline
-  host_public_ip    = module.network.public_ip_addresses.web
-
-  extra = {
-    default = {
-      name               = local.admin_username
-      password           = module.compute.generated_passwords.web
-      python_interpreter = "/usr/bin/python3"
-      connection         = "ssh"
-      become_password    = module.compute.generated_passwords.web
-      ssh_common_args    = "-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o PubkeyAuthentication=no"
-      become_password    = module.compute.generated_passwords.web
-    }
-  }
-
-  depends_on = [
-    time_sleep.wait_30_seconds,
-    module.jenkins_variables
-  ]
-}
-
-# configure pipeline in jenkins via ansible
-module "jenkins_pipeline" {
-  source = "../../../modules/ansible"
-
-  playbook_filename = local.jenkins_pipeline
+  playbook_filename = local.jenkins_pipeline2
   host_public_ip    = module.network.public_ip_addresses.web
 
   extra = {
