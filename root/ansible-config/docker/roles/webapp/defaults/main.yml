@@ -1,0 +1,8 @@
+---
+# Default variables for webapp role
+app_repo: 'https://github.com/virajt71/website.git'
+app_dest: '/home/{{ docker_user }}/website'
+container_name: web
+image_name: website
+host_port: 80
+container_port: 80

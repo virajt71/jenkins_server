@@ -1,0 +1,45 @@
+---
+- name: Install Git
+  apt:
+    name: git
+    state: present
+  tags: webapp
+
+- name: Clone website repository
+  git:
+    repo: "{{ app_repo }}"
+    dest: "{{ app_dest }}"
+    version: develop
+    force: yes
+  become: no
+  register: git_clone
+  tags: webapp
+
+- name: Build Docker image
+  community.docker.docker_image:
+    name: "{{ image_name }}"
+    build:
+      path: "{{ app_dest }}"
+    source: build
+    state: present
+    force_source: "{{ git_clone.changed }}"
+  register: image_build
+  tags: webapp
+
+- name: Stop and remove existing container
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    state: absent
+  when: image_build.changed
+  tags: webapp
+
+- name: Run Docker container
+  community.docker.docker_container:
+    name: "{{ container_name }}"
+    image: "{{ image_name }}"
+    state: started
+    restart_policy: always
+    ports:
+      - "{{ host_port }}:{{ container_port }}"
+    recreate: "{{ image_build.changed }}"
+  tags: webapp

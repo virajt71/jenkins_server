@@ -1,0 +1,28 @@
+---
+- name: Deploy website with Docker
+  hosts: all
+  become: yes
+  vars:
+    docker_user: azureuser
+    app_repo: 'https://github.com/virajt71/website.git'
+    app_dest: '/home/{{ docker_user }}/website'
+    container_name: web
+    image_name: website
+    host_port: 80
+    container_port: 80
+
+  pre_tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+  roles:
+    - docker
+    - webapp
+
+  handlers:
+    - name: restart docker
+      systemd:
+        name: docker
+        state: restarted

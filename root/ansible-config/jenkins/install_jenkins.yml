@@ -1,0 +1,147 @@
+---
+- name: Install Jenkins on Ubuntu
+  hosts: all
+  become: yes
+
+  vars:
+    jenkins_port: 8080
+    jenkins_url: "http://localhost:{{ jenkins_port }}"
+    jenkins_plugins:
+      - git
+      - workflow-aggregator
+      - docker-workflow
+      - pipeline-stage-view
+      - credentials-binding
+      - ssh-slaves
+      - ansible
+      - configuration-as-code
+
+  tasks:
+    - name: Ensure required dependencies are installed
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - jq
+          - python3-pip
+          - openjdk-21-jdk
+          - apt-transport-https
+          - lsb-release
+          - gnupg
+        state: present
+        update_cache: yes
+
+    - name: Download and install Azure CLI
+      shell: curl -sL https://aka.ms/InstallAzureCLIDeb | bash
+      args:
+        executable: /bin/bash
+
+    - name: Install python-jenkins library
+      ansible.builtin.pip:
+        name: python-jenkins
+        state: present
+
+    - name: Download Jenkins GPG key
+      ansible.builtin.get_url:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        dest: /usr/share/keyrings/jenkins-keyring.asc
+        mode: "0644"
+        force: yes
+
+    - name: Add Jenkins repository
+      ansible.builtin.apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+        filename: jenkins
+
+    - name: Install Jenkins
+      ansible.builtin.apt:
+        name: jenkins
+        state: present
+        update_cache: yes
+
+    - name: Ensure Jenkins service is enabled and running
+      ansible.builtin.systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Wait for Jenkins to start on port {{ jenkins_port }}
+      ansible.builtin.wait_for:
+        port: "{{ jenkins_port }}"
+        delay: 10
+        timeout: 90
+
+    - name: Get initial Jenkins admin password
+      ansible.builtin.slurp:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+      register: admin_pass_encoded
+
+    - name: Copy Jenkins admin password from remote to local
+      ansible.builtin.fetch:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+        dest: "./password/jenkins-admin-password.txt"
+        flat: yes
+
+    - name: Set admin credentials
+      ansible.builtin.set_fact:
+        jenkins_admin_user: admin
+        jenkins_admin_password: "{{ admin_pass_encoded['content'] | b64decode | trim }}"
+
+    - name: Install Jenkins plugins using community.general.jenkins_plugin
+      community.general.jenkins_plugin:
+        name: "{{ item }}"
+        url: "{{ jenkins_url }}"
+        url_username: "{{ jenkins_admin_user }}"
+        url_password: "{{ jenkins_admin_password }}"
+        state: present
+        with_dependencies: yes
+      loop: "{{ jenkins_plugins }}"
+      register: plugin_install_result
+
+    - name: Check if any plugins were installed or updated
+      ansible.builtin.set_fact:
+        jenkins_restart_required: "{{ plugin_install_result.results | selectattr('changed', 'equalto', true) | list | length > 0 }}"
+
+    - name: Restart Jenkins if plugins were installed
+      ansible.builtin.systemd:
+        name: jenkins
+        state: restarted
+      when: jenkins_restart_required
+
+    - name: Wait for Jenkins to come back online
+      ansible.builtin.wait_for:
+        port: "{{ jenkins_port }}"
+        delay: 10
+        timeout: 120
+      when: jenkins_restart_required
+
+    - name: Display installed plugins
+      ansible.builtin.debug:
+        msg: "Plugins installed/updated: {{ plugin_install_result.results | selectattr('changed', 'equalto', true) | map(attribute='item') | list }}"
+      when: jenkins_restart_required
+
+    # Configure Jenkins user with Terraform access
+    - name: Gather system group info
+      ansible.builtin.getent:
+        database: group
+
+    - name: Add jenkins user to necessary groups
+      ansible.builtin.user:
+        name: jenkins
+        groups: docker
+        append: yes
+      when: "'docker' in ansible_facts.getent_group"
+
+    # - name: Add Azure Subscription ID to Jenkins credentials
+    #   jenkins_credential:
+    #     url: http://localhost:{{ jenkins_port }}
+    #     user: "{{ jenkins_admin_user }}"
+    #     password: "{{ jenkins_admin_token }}"
+    #     state: present
+    #     credential:
+    #       type: secret
+    #       id: azure
+    #       secret: "{{ azure_subscription_id }}"
+    #       description: Azure Subscription ID for Deployment

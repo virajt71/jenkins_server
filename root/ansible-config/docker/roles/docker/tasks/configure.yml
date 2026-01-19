@@ -1,0 +1,9 @@
+---
+- name: Add user to docker group
+  user:
+    name: "{{ docker_user }}"
+    groups: docker
+    append: yes
+
+- name: Reset SSH connection for group changes
+  meta: reset_connection
