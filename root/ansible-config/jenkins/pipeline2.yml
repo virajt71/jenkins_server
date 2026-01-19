@@ -6,6 +6,11 @@
   vars:
     jenkins_port: 8080
     jenkins_url: "http://localhost:{{ jenkins_port }}"
+    # Pipeline-from-SCM: repo and script path (Jenkinsfile in repo)
+    scm_url: "https://github.com/virajt71/Entra_ID_Managment.git"
+    scm_branch: "*/develop"
+    script_path: "Jenkinsfile"
+    pipeline_description: "Entra ID Terraform Pipeline (Jenkinsfile from SCM)"
 
   tasks:
     - name: Get initial Jenkins admin password
@@ -33,10 +38,10 @@
         jenkins_token: "{{ token_result.token }}"
       when: token_result.token is defined
 
-    - name: Create Entra ID Terraform pipeline job
+    - name: Create Entra ID Terraform pipeline job (Pipeline script from SCM)
       community.general.jenkins_job:
-        config: "{{ lookup('file', 'pipeline/pipeline_job.groovy') }}"
-        name: entra-id-pipeline-groovy
+        config: "{{ lookup('template', 'pipeline/pipeline-from-scm.xml.j2') }}"
+        name: entra-id-pipeline
         user: admin
         password: "{{ jenkins_admin_pass }}"
         url: "{{ jenkins_url }}"
