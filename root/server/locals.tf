@@ -1,7 +1,7 @@
 locals {
-  env            = "dev"
+  env            = "env"
   location       = "northeurope"
-  name_prefix    = "app-${local.env}"
+  name_prefix    = "jenkins-${local.env}"
   admin_username = "azureuser"
   common_tags = {
     environment = local.env
@@ -14,15 +14,19 @@ locals {
   install_jenkins  = "${path.root}/../ansible-config/jenkins/install_jenkins.yml"
   jenkins_variables= "${path.root}/../ansible-config/jenkins/variables.yml"
 
-  jenkins_pipeline = "${path.root}/../ansible-config/jenkins/pipeline.yml"
-  jenkins_pipeline2 = "${path.root}/../ansible-config/jenkins/pipeline2.yml"
+  jenkins_pipeline_entra = "${path.root}/../ansible-config/jenkins/pipeline_entra.yml"
+  jenkins_pipeline_entra_scm = "${path.root}/../ansible-config/jenkins/pipeline_entra_scm.yml"
 
-  jenkins_trigger = "${path.root}/../ansible-config/jenkins/trigger.yml"
+  entra_trigger = "${path.root}/../ansible-config/jenkins/entra_trigger.yml"
+  entra_scm_trigger = "${path.root}/../ansible-config/jenkins/entra_scm_trigger.yml"
 
 
   # Vault configuration
   vault_file          = "../ansible-config/jenkins/vault/secrets.yml"
   vault_password_file = "../ansible-config/jenkins/vault-pass.txt"
+
+  # Dynamic path for ANSIBLE_VAULT_PASSWORD_FILE (project-relative; works from any clone location)
+  ansible_vault_password_file_path = abspath("${path.root}/../ansible-config/jenkins/vault-pass.txt")
 }
 
 variable "subscription_id" {
