@@ -41,7 +41,7 @@
     - name: Create Entra ID Terraform pipeline job (Pipeline script from SCM)
       community.general.jenkins_job:
         config: "{{ lookup('template', 'pipeline/pipeline-from-scm.xml.j2') }}"
-        name: entra-id-pipeline
+        name: entra-id-pipeline-scm
         user: admin
         password: "{{ jenkins_admin_pass }}"
         url: "{{ jenkins_url }}"
