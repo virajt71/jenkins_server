@@ -1,0 +1,48 @@
+---
+- name: Create Jenkins jobs and secrets
+  hosts: all
+  become: true
+
+  vars:
+    jenkins_port: 8080
+    jenkins_url: "http://localhost:{{ jenkins_port }}"
+
+    # Pipeline-from-SCM: repo and script path (Jenkinsfile in repo)
+    scm_url: "https://github.com/virajt71/terragrunt.git"
+    scm_branch: "*/develop"
+    script_path: "Jenkinsfile"
+    pipeline_description: "Entra ID Terraform Pipeline (Jenkinsfile from SCM)"
+
+  tasks:
+    - name: Get initial Jenkins admin password
+      ansible.builtin.slurp:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+      register: admin_pass_encoded
+
+    - name: Decode admin password
+      ansible.builtin.set_fact:
+        jenkins_admin_pass: "{{ admin_pass_encoded.content | b64decode | trim }}"
+
+    - name: Generate Jenkins API token
+      community.general.jenkins_credential:
+        id: "ansible-api-token"
+        name: "Ansible Automation Token"
+        jenkins_user: "admin"
+        jenkins_password: "{{ jenkins_admin_pass }}"
+        type: "token"
+        url: "{{ jenkins_url }}"
+      register: token_result
+      failed_when: false # Don't fail immediately, let's check the result
+
+    - name: Store generated token as fact
+      ansible.builtin.set_fact:
+        jenkins_token: "{{ token_result.token }}"
+      when: token_result.token is defined
+
+    - name: Create Entra ID Terraform pipeline job (Pipeline script from SCM)
+      community.general.jenkins_job:
+        config: "{{ lookup('template', 'pipeline/pipeline-terragrunt-scm.xml.j2') }}"
+        name: pipeline-terragrunt-scm
+        user: admin
+        password: "{{ jenkins_admin_pass }}"
+        url: "{{ jenkins_url }}"

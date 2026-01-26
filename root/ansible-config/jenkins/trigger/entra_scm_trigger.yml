@@ -35,16 +35,6 @@
 
     - name: Trigger Jenkins build in detached mode
       community.general.jenkins_build:
-        name: entra-id-pipeline
-        state: present
-        user: admin
-        token: "{{ jenkins_token }}"
-        url: "{{ jenkins_url }}"
-        detach: true
-        time_between_checks: 20
-
-    - name: Trigger Jenkins build in detached mode
-      community.general.jenkins_build:
         name: entra-id-pipeline-scm
         state: present
         user: admin

@@ -1,0 +1,23 @@
+---
+- name: Install Terragrunt using official install script
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Check if terragrunt already installed
+      command: terragrunt --version
+      register: tg_check
+      ignore_errors: true
+
+    - name: Install terragrunt using official installer
+      shell: curl -sL https://terragrunt.gruntwork.io/install | bash
+      args:
+        executable: /bin/bash
+      when: tg_check.rc != 0
+
+    - name: Verify terragrunt installation
+      command: terragrunt --version
+      register: tg_version
+
+    - debug:
+        msg: "Terragrunt installed successfully: {{ tg_version.stdout }}"
