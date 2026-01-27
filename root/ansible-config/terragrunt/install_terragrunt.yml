@@ -1,23 +1,21 @@
 ---
 - name: Install Terragrunt using official install script
   hosts: all
-  become: true
-
+  become: yes
   tasks:
-    - name: Check if terragrunt already installed
-      command: terragrunt --version
-      register: tg_check
-      ignore_errors: true
+    - name: Check if Terragrunt is already installed
+      ansible.builtin.command: terragrunt --version
+      register: terragrunt_check
+      failed_when: false
+      changed_when: false
 
     - name: Install terragrunt using official installer
       shell: curl -sL https://terragrunt.gruntwork.io/install | bash
       args:
         executable: /bin/bash
-      when: tg_check.rc != 0
-
-    - name: Verify terragrunt installation
-      command: terragrunt --version
-      register: tg_version
-
-    - debug:
-        msg: "Terragrunt installed successfully: {{ tg_version.stdout }}"
+      when: terragrunt_check.rc != 0
+      register: terragrunt_install
+      failed_when:
+        - terragrunt_install.rc != 0
+        - "'already installed' not in terragrunt_install.stderr"
+      changed_when: terragrunt_install.rc == 0

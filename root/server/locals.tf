@@ -11,7 +11,7 @@ locals {
   # install
   docker           = "${path.root}/../ansible-config/docker/docker.yml"
   terraform        = "${path.root}/../ansible-config/terraform/install_terraform.yml"
-  terragrunt       = "${path.root}/../ansible-config/terraform/install_terragrunt.yml"
+  terragrunt       = "${path.root}/../ansible-config/terragrunt/install_terragrunt.yml"
   install_jenkins  = "${path.root}/../ansible-config/jenkins/install_jenkins.yml"
   
   # jenkins variables
@@ -20,7 +20,7 @@ locals {
   # pipeline
   jenkins_pipeline_entra          = "${path.root}/../ansible-config/jenkins/pipeline_entra.yml"
   jenkins_pipeline_entra_scm      = "${path.root}/../ansible-config/jenkins/pipeline_entra_scm.yml"
-  jenkins_pipeline_terragrunt_scm = "${path.root}/../ansible-config/jenkins/pipeline_entra_scm.yml"
+  jenkins_pipeline_terragrunt_scm = "${path.root}/../ansible-config/jenkins/pipeline_terragrunt_scm.yml"
 
   # trigger
   entra_trigger          = "${path.root}/../ansible-config/jenkins/trigger/entra_trigger.yml"
